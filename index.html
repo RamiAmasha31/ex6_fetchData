@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product Viewer</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" />
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <style>
+    .disabled {
+      opacity: 0.5;
+    }
+    /* Additional Styles */
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    .pagination-button {
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 2px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .pagination-button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 p-8">
+  <h1 class="text-2xl font-bold mb-5">Products</h1>
+  <div id="productsTable" class="mb-5"></div>
+  <button id="prevPage" class="pagination-button">Prev</button>
+  <button id="nextPage" class="pagination-button">Next</button>
+  <span class="ml-3">
+    <span id="currentPage"></span> from <span id="totalPages"></span>
+  </span>
+
+  <script>
+    let currentPage = 0;
+    const productsPerPage = 10;
+    let products = [];
+
+    const fetchProducts = () => {
+      $.get("https://dummyjson.com/products?limit=100", function (data) {
+        products = data.products;
+        displayProducts();
+        updateTotalPages();
+      });
+    };
+
+    const displayProducts = () => {
+      const startIndex = currentPage * productsPerPage;
+      const endIndex = startIndex + productsPerPage;
+      const currentProducts = products.slice(startIndex, endIndex);
+
+      const tableHTML = `
+        <table class="table-auto w-full bg-white rounded shadow">
+          <thead>
+            <tr>
+              <th class="px-4 py-2">Name</th>
+              <th class="px-4 py-2">Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${currentProducts.map(product => `
+              <tr>
+                <td class="border px-4 py-2">${product.title}</td>
+                <td class="border px-4 py-2">${product.price}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>`;
+
+      $("#productsTable").html(tableHTML);
+      updatePaginationButtons();
+    };
+
+    const updatePaginationButtons = () => {
+      const prevButton = $("#prevPage");
+      const nextButton = $("#nextPage");
+      const totalPages = Math.ceil(products.length / productsPerPage);
+
+      prevButton.prop("disabled", currentPage === 0);
+      nextButton.prop("disabled", (currentPage + 1) * productsPerPage >= products.length);
+
+      prevButton.toggleClass("disabled", currentPage === 0);
+      nextButton.toggleClass("disabled", currentPage === totalPages - 1);
+    };
+
+    $("#prevPage").click(() => {
+      if (currentPage > 0) {
+        currentPage--;
+        displayProducts();
+        updateCurrentPageCount();
+      }
+    });
+
+    $("#nextPage").click(() => {
+      const totalPages = Math.ceil(products.length / productsPerPage);
+      if ((currentPage + 1) * productsPerPage < products.length) {
+        currentPage++;
+        displayProducts();
+        updateCurrentPageCount();
+      }
+    });
+
+    const updateCurrentPageCount = () => {
+      $("#currentPage").text(currentPage + 1);
+      updatePaginationButtons();
+    };
+
+    const updateTotalPages = () => {
+      const totalPages = Math.ceil(products.length / productsPerPage);
+      $("#totalPages").text(totalPages);
+    };
+
+    fetchProducts();
+    updateCurrentPageCount();
+  </script>
+</body>
+</html>
